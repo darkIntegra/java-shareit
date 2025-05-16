@@ -1,46 +1,51 @@
 package ru.practicum.shareit.user;
 
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.mapper.UserMapper;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.storage.InMemoryUserStorage;
+import ru.practicum.shareit.user.service.UserService;
+import ru.practicum.shareit.validation.OnCreate;
+import ru.practicum.shareit.validation.OnUpdate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
-    private final InMemoryUserStorage inMemoryUserStorage;
 
-    //напрямую внедряю через конструктор (можно было через @Autowired) но мне так надежнее
-    public UserController(InMemoryUserStorage inMemoryUserStorage) {
-        this.inMemoryUserStorage = inMemoryUserStorage;
-    }
+    private final UserService userService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserDto addUser(@RequestBody @Valid UserDto dto) {
-        User user = UserMapper.toUser(dto);
-        User savedUser = inMemoryUserStorage.addUser(user);
-        return UserMapper.toUserDto(savedUser);
+    public UserDto addUser(@RequestBody @Validated(OnCreate.class) UserDto dto) {
+        return userService.addUser(dto);
     }
 
-    @PutMapping("/{id}")
-    public UserDto updateUser(@PathVariable long id, @RequestBody @Valid UserDto dto) {
-        User user = UserMapper.toUser(dto);
-        User updateUser = inMemoryUserStorage.updateUser(id, user);
-        return UserMapper.toUserDto(updateUser);
+    @PatchMapping("/{id}")
+    public UserDto updateUser(
+            @PathVariable Long id, @RequestBody @Validated(OnUpdate.class) UserDto dto) {
+        return userService.updateUser(id, dto);
+    }
+
+    @GetMapping("/{id}")
+    public UserDto getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
     }
 
     @GetMapping
-    public List<UserDto> getAllUsers() {
-        List<User> users = new ArrayList<>(inMemoryUserStorage.getAllUsers());
-        return users.stream()
-                .map(UserMapper::toUserDto)
-                .toList();
+    public Collection<UserDto> getAllUsers() {
+        return userService.getAllUsers();
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteUserById(@PathVariable Long id) {
+        userService.deleteUserById(id);
+    }
+
+    @DeleteMapping
+    public void deleteAllUsers() {
+        userService.deleteAllUsers();
     }
 }

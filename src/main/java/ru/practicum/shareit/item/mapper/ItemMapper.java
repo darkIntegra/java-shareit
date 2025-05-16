@@ -6,14 +6,22 @@ import ru.practicum.shareit.item.model.Item;
 
 @Component
 public class ItemMapper {
-    public ItemDto toItemDto(Item item) {
+    public static Item toItem(ItemDto dto) {
+        return Item.builder()
+                .id(dto.getId())
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .available(dto.getAvailable())
+                .build();
+    }
+
+    public static ItemDto toItemDto(Item item) {
         return ItemDto.builder()
-                .itemId(item.getItemId())
+                .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
                 .available(item.getAvailable())
-                .ownerId(item.getOwner().getUserId())
-                .requestId(item.getRequest() != null ? item.getRequest().getRequestId() : null)
                 .build();
     }
 }
+

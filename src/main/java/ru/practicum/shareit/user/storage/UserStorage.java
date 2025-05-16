@@ -17,4 +17,6 @@ public interface UserStorage {
     void deleteUserById(long id);
 
     void deleteAllUsers();
+
+    boolean existsById(Long userId);
 }

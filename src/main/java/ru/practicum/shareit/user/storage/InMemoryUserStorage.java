@@ -1,15 +1,15 @@
 package ru.practicum.shareit.user.storage;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Component
+@Repository
 public class InMemoryUserStorage implements UserStorage {
+
     private final Map<Long, User> users = new HashMap<>();
-    //Несмотря на проверки в контроллере, использую принцип защиты слоев, также убрал из DTO id. Id присваивает сервер
     private final AtomicLong nextId = new AtomicLong(1);
 
     @Override
@@ -26,11 +26,11 @@ public class InMemoryUserStorage implements UserStorage {
         if (!users.containsKey(id)) {
             throw new NoSuchElementException("Пользователь с ID=" + id + " не найден");
         }
+        updateUser.setUserId(id); // Явно устанавливаем ID
         users.put(id, updateUser);
         return updateUser;
     }
 
-    //добавил защиту от прямого изменения извне
     @Override
     public Collection<User> getAllUsers() {
         return Collections.unmodifiableCollection(users.values());
@@ -52,5 +52,10 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public void deleteAllUsers() {
         users.clear();
+    }
+
+    @Override
+    public boolean existsById(Long userId) {
+        return users.containsKey(userId);
     }
 }

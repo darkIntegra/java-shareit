@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.practicum.shareit.user.model.User;
 
 @Data
 @NoArgsConstructor
@@ -14,7 +15,5 @@ public class Item {
     private String name;
     private String description;
     private Boolean available;
-    private Long ownerId;
-    // private ItemRequest request;
-    // возможно, это тоже нужно private String feedback;
+    private User owner;
 }

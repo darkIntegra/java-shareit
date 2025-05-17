@@ -15,7 +15,7 @@ public class InMemoryItemStorage implements ItemStorage {
 
     @Override
     public Item addItem(Item item) {
-        Objects.requireNonNull(item, "Вещь не может быть null");
+//        Objects.requireNonNull(item, "Вещь не может быть null");
         item.setId(nextId.getAndIncrement());
         items.put(item.getId(), item);
         return item;
@@ -23,10 +23,10 @@ public class InMemoryItemStorage implements ItemStorage {
 
     @Override
     public Item updateItem(Long itemId, Item updatedItem) {
-        Objects.requireNonNull(updatedItem, "Обновлённая вещь не может быть null");
-        if (!items.containsKey(itemId)) {
-            throw new NoSuchElementException("Вещь с ID=" + itemId + " не найдена");
-        }
+//        Objects.requireNonNull(updatedItem, "Обновлённая вещь не может быть null");
+//        if (!items.containsKey(itemId)) {
+//            throw new NoSuchElementException("Вещь с ID=" + itemId + " не найдена");
+//        }
         updatedItem.setId(itemId);
         items.put(itemId, updatedItem);
         return updatedItem;
@@ -45,7 +45,7 @@ public class InMemoryItemStorage implements ItemStorage {
     @Override
     public Collection<Item> getItemsByOwnerId(Long ownerId) {
         return items.values().stream()
-                .filter(item -> Objects.equals(item.getOwnerId(), ownerId))
+                .filter(item -> Objects.equals(item.getOwner().getUserId(), ownerId))
                 .collect(Collectors.toList());
     }
 

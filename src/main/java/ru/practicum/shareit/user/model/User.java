@@ -9,5 +9,4 @@ public class User {
     private Long userId;
     private String name;
     private String email;
-    // возможно, тоже нужно private List items;
 }

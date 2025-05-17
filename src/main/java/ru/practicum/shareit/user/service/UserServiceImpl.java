@@ -38,13 +38,6 @@ public class UserServiceImpl implements UserService {
         User existingUser = userStorage.findUserById(id)
                 .orElseThrow(() -> new NoSuchElementException("Пользователь с ID=" + id + " не найден"));
 
-        // Если email передан, проверяем его уникальность
-        if (dto.getEmail() != null && !dto.getEmail().equals(existingUser.getEmail()) &&
-                userStorage.getAllUsers().stream()
-                        .anyMatch(u -> Objects.equals(u.getEmail(), dto.getEmail()))) {
-            throw new ConflictException("Пользователь с таким email уже существует");
-        }
-
         // Обновляем пользователя
         User updatedUser = User.builder()
                 .userId(id)

@@ -6,8 +6,9 @@ import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.storage.InMemoryItemStorage;
-import ru.practicum.shareit.user.storage.InMemoryUserStorage;
+import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.storage.UserStorage;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,8 +19,8 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
 
-    private final InMemoryItemStorage itemStorage;
-    private final InMemoryUserStorage userStorage;
+    private final ItemStorage itemStorage;
+    private final UserStorage userStorage;
 
     @Override
     public ItemDto addItem(Long userId, ItemDto dto) {
@@ -27,8 +28,11 @@ public class ItemServiceImpl implements ItemService {
             throw new NoSuchElementException("Пользователь с ID=" + userId + " не найден");
         }
 
+        User owner = userStorage.findUserById(userId)
+                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID=" + userId + " не найден"));
+
         Item item = ItemMapper.toItem(dto);
-        item.setOwnerId(userId);
+        item.setOwner(owner);
 
         Item savedItem = itemStorage.addItem(item);
         return ItemMapper.toItemDto(savedItem);
@@ -41,7 +45,7 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NoSuchElementException("Вещь с ID=" + itemId + " не найдена"));
 
         // Проверяем права владельца
-        if (!Objects.equals(existingItem.getOwnerId(), userId)) {
+        if (!Objects.equals(existingItem.getOwner().getUserId(), userId)) {
             throw new ForbiddenException("Пользователь с ID=" + userId + " не является владельцем вещи");
         }
 
@@ -57,7 +61,7 @@ public class ItemServiceImpl implements ItemService {
 
         // Преобразуем обновлённый DTO обратно в Item
         Item updatedItem = ItemMapper.toItem(updatedItemDto);
-        updatedItem.setOwnerId(existingItem.getOwnerId()); // Владелец остаётся неизменным
+        updatedItem.setOwner(existingItem.getOwner()); // Владелец остаётся неизменным
 
         // Сохраняем обновлённую вещь через хранилище
         Item savedItem = itemStorage.updateItem(itemId, updatedItem);

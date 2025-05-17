@@ -1,69 +1,48 @@
 package ru.practicum.shareit.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.practicum.shareit.exception.dto.ErrorResponse;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Обработка ошибок неверного формата ID
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        Map<String, String> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Неверный формат ID");
-        errorDetails.put("message", "ID должен быть числом, но получен: " + ex.getValue());
-        return ResponseEntity.badRequest().body(errorDetails);
-    }
-
     // Обработка общих ошибок IllegalArgumentException
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        Map<String, String> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Некорректные данные");
-        errorDetails.put("message", ex.getMessage());
-        return ResponseEntity.badRequest().body(errorDetails);
+    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ErrorResponse("Некорректные данные", ex.getMessage());
     }
 
     // Обработка ошибок NoSuchElementException
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Map<String, String>> handleNoSuchElementException(NoSuchElementException ex) {
-        Map<String, String> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Ресурс не найден");
-        errorDetails.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorDetails);
+    public ErrorResponse handleNoSuchElementException(NoSuchElementException ex) {
+        return new ErrorResponse("Ресурс не найден", ex.getMessage());
     }
 
     // Обработка всех остальных исключений (резервный обработчик)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
-        Map<String, String> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Внутренняя ошибка сервера");
-        errorDetails.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorDetails);
+    public ErrorResponse handleGeneralException(Exception ex) {
+        return new ErrorResponse("Внутренняя ошибка сервера", ex.getMessage());
     }
 
-    // обработка двух email
+    // Обработка конфликтов (например, дубликат email)
+    @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<Map<String, String>> handleConflictException(ConflictException ex) {
-        Map<String, String> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Конфликт");
-        errorDetails.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorDetails);
+    public ErrorResponse handleConflictException(ConflictException ex) {
+        return new ErrorResponse("Конфликт", ex.getMessage());
     }
 
-    // обработка отсутствия доступа
+    // Обработка отсутствия доступа
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<Map<String, String>> handleForbiddenException(ForbiddenException ex) {
-        Map<String, String> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Доступ запрещён");
-        errorDetails.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorDetails);
+    public ErrorResponse handleForbiddenException(ForbiddenException ex) {
+        return new ErrorResponse("Доступ запрещён", ex.getMessage());
     }
 }

@@ -16,7 +16,6 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User addUser(User user) {
-//        Objects.requireNonNull(user, "Новый пользователь не может быть null");
 
         // Проверяем уникальность email (убираем проверку из updateUser UserServiceImpl)
         if (!emails.add(user.getEmail())) {
@@ -29,7 +28,6 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User updateUser(long id, User updateUser) {
-//        Objects.requireNonNull(updateUser, "Пользователь для обновления не может быть null");
         User existingUser = users.get(id);
         if (existingUser == null) {
             throw new NoSuchElementException("Пользователь с ID=" + id + " не найден");

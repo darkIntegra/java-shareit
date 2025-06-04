@@ -2,8 +2,6 @@ package ru.practicum.shareit.item.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
@@ -33,7 +31,6 @@ public class ItemServiceImpl implements ItemService {
     private final UserStorage userStorage;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
-    private static final Logger log = LoggerFactory.getLogger(ItemServiceImpl.class);
 
     @Override
     public ItemDto addItem(Long userId, ItemDto dto) {
@@ -129,26 +126,35 @@ public class ItemServiceImpl implements ItemService {
     @Transactional
     @Override
     public CommentDto addComment(Long userId, Long itemId, CommentDto commentDto) {
-        log.info("Проверка прав для добавления комментария: userId={}, itemId={}", userId, itemId);
+        // 1. Проверяем существование пользователя
+        User user = userStorage.findUserById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID=" + userId + " не найден"));
 
-        // Проверяем, что пользователь арендовал вещь с подтвержденным статусом
+        // 2. Проверяем существование вещи
+        Item item = itemStorage.findItemById(itemId)
+                .orElseThrow(() -> new NotFoundException("Вещь с ID=" + itemId + " не найдена"));
+
+        // 3. Проверяем, что пользователь арендовал вещь с подтвержденным статусом
         boolean hasBooking = bookingRepository.existsByUserAndItemAndApprovedStatus(userId, itemId);
         if (!hasBooking) {
-            log.warn("Пользователь с ID={} не имеет права оставлять комментарий для вещи с ID={}", userId, itemId);
             throw new BadRequestException("Пользователь с ID=" + userId + " не имеет права оставлять комментарий");
         }
 
-        // Создаем комментарий
+        // 4. Проверяем, что бронирование завершено
+        boolean isBookingCompleted = bookingRepository.existsByUserAndItemAndApprovedStatusAndEndDateBefore(
+                userId, itemId, LocalDateTime.now());
+        if (!isBookingCompleted) {
+            throw new BadRequestException("Бронирование для пользователя с ID=" + userId + " еще не завершено");
+        }
+
+        // 5. Создаем комментарий
         Comment comment = CommentMapper.toComment(commentDto);
-        comment.setItem(itemStorage.findItemById(itemId).orElseThrow(() ->
-                new NotFoundException("Вещь с ID=" + itemId + " не найдена")));
-        comment.setAuthor(userStorage.findUserById(userId).orElseThrow(() ->
-                new NotFoundException("Пользователь с ID=" + userId + " не найден")));
+        comment.setItem(item);
+        comment.setAuthor(user);
         comment.setCreated(LocalDateTime.now());
 
-        // Сохраняем комментарий
+        // 6. Сохраняем комментарий
         Comment savedComment = commentRepository.save(comment);
-        log.info("Комментарий успешно сохранен: commentId={}", savedComment.getId());
 
         return CommentMapper.toCommentDto(savedComment);
     }

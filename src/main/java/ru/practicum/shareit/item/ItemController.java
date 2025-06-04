@@ -1,8 +1,7 @@
 package ru.practicum.shareit.item;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +19,6 @@ import java.util.Collection;
 public class ItemController {
 
     private final ItemService itemService;
-    private static final Logger log = LoggerFactory.getLogger(ItemController.class);
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -34,16 +32,11 @@ public class ItemController {
     @ResponseStatus(HttpStatus.CREATED)
     public CommentDto addComment(
             @PathVariable Long itemId,
-            @RequestBody CommentDto commentDto,
+            @RequestBody @Valid CommentDto commentDto,
             @RequestHeader("X-Sharer-User-Id") Long userId
     ) {
-        // Логируем входящий запрос
-        log.info("Получен запрос на добавление комментария: itemId={}, userId={}, commentDto={}", itemId, userId, commentDto);
         // Вызываем метод сервиса
         CommentDto result = itemService.addComment(userId, itemId, commentDto);
-        // Логируем успешное завершение операции
-        log.info("Комментарий успешно добавлен: itemId={}, userId={}, commentId={}", itemId, userId, result.getId());
-
         return result;
     }
 

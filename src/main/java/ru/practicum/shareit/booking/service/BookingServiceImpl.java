@@ -2,13 +2,15 @@ package ru.practicum.shareit.booking.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.dto.BookingState;
+import ru.practicum.shareit.booking.mapper.BookingCreateMapper;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
+import ru.practicum.shareit.booking.mapper.BookingShortMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.ForbiddenException;
@@ -34,25 +36,33 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingDto addBooking(Long userId, BookingDto dto) {
+    public BookingDto addBooking(Long userId, BookingCreateDto createDto) {
         // Проверяем существование пользователя
         User booker = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID=" + userId + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID=" + userId + " не найден"));
 
         // Проверяем существование вещи
-        Item item = itemRepository.findById(dto.getItemId())
-                .orElseThrow(() -> new NoSuchElementException("Вещь с ID=" + dto.getItemId() + " не найдена"));
+        Item item = itemRepository.findById(createDto.getItemId())
+                .orElseThrow(() -> new NoSuchElementException("Вещь с ID=" + createDto.getItemId() + " не найдена"));
 
         // Проверяем, что вещь доступна для бронирования
         if (!item.getAvailable()) {
-            throw new IllegalArgumentException("Вещь с ID=" + dto.getItemId() + " недоступна для бронирования");
+            throw new IllegalArgumentException("Вещь с ID=" + createDto.getItemId() + " недоступна для бронирования");
+        }
+
+        // Проверяем пересечение с существующими бронированиями
+        boolean isOverlapping = bookingRepository.existsByItemIdAndDateOverlap(
+                createDto.getItemId(),
+                createDto.getStart(),
+                createDto.getEnd()
+        );
+
+        if (isOverlapping) {
+            throw new IllegalArgumentException("Бронирование пересекается с существующими бронированиями");
         }
 
         // Создаем бронирование
-        Booking booking = BookingMapper.toBooking(dto);
-        booking.setItem(item);
-        booking.setBooker(booker);
-        booking.setStatus(BookingStatus.WAITING);
+        Booking booking = BookingCreateMapper.toBooking(createDto, item, userRepository.findById(userId).orElseThrow());
 
         // Сохраняем бронирование
         Booking savedBooking = bookingRepository.save(booking);
@@ -89,54 +99,41 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getAllBookingsByUser(Long userId, BookingState state, Long requesterId) {
-        Logger log = LoggerFactory.getLogger(this.getClass());
-
-        // Логируем входные параметры
-        log.info("Получен запрос: userId={}, state={}, requesterId={}", userId, state, requesterId);
-
-        // Сравниваем userId и requesterId
+    public List<BookingShortDto> getAllBookingsByUser(Long userId, BookingState state, Long requesterId) {
+        // Проверяем права доступа
         if (!Objects.equals(userId, requesterId)) {
-            log.warn("Доступ запрещён: userId={}, requesterId={}", userId, requesterId);
             throw new ForbiddenException("Пользователь с ID=" + requesterId + " не имеет прав доступа");
         }
 
-        log.info("Права доступа подтверждены");
-
         // Проверяем существование пользователя
         if (!userRepository.existsById(userId)) {
-            log.warn("Пользователь не найден: userId={}", userId);
             throw new NotFoundException("Пользователь с ID=" + userId + " не найден");
         }
 
-        log.info("Пользователь найден: userId={}", userId);
-
         // Получаем все бронирования пользователя
         var bookings = bookingRepository.findByBookerId(userId);
-        log.info("Найдено {} бронирований для пользователя с ID={}", bookings.size(), userId);
 
         // Фильтруем по состоянию
         var filteredBookings = filterBookingsByState(bookings, state);
-        log.info("После фильтрации по состоянию '{}' осталось {} бронирований", state, filteredBookings.size());
 
         return filteredBookings.stream()
-                .map(BookingMapper::toBookingDto)
+                .map(BookingShortMapper::toBookingShortDto) // Используем BookingShortMapper
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<BookingDto> getAllBookingsForOwnerItems(Long ownerId, BookingState state) {
+    public List<BookingShortDto> getAllBookingsForOwnerItems(Long ownerId, BookingState state) {
         // Проверяем существование пользователя
         if (!userRepository.existsById(ownerId)) {
             throw new NotFoundException("Пользователь с ID=" + ownerId + " не найден");
         }
 
         // Получаем все бронирования для владельца
-        var bookings = bookingRepository.findByOwnerId(ownerId);
+        var bookings = bookingRepository.findByItem_Owner_Id(ownerId);
 
         // Фильтруем по состоянию
         return filterBookingsByState(bookings, state).stream()
-                .map(BookingMapper::toBookingDto)
+                .map(BookingShortMapper::toBookingShortDto)
                 .collect(Collectors.toList());
     }
 
@@ -147,8 +144,8 @@ public class BookingServiceImpl implements BookingService {
             throw new NotFoundException("Пользователь с ID=" + requesterId + " не найден");
         }
 
-        // Получаем все бронирования
-        var bookings = bookingRepository.findByBookerId(requesterId);
+        // Получаем все бронирования пользователя
+        List<Booking> bookings = bookingRepository.findByBookerId(requesterId);
 
         // Фильтруем по состоянию
         return filterBookingsByState(bookings, state).stream()

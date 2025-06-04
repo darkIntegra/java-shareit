@@ -20,10 +20,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByItemId(Long itemId);
 
     // Поиск бронирований для владельца вещей
-    @Query("SELECT b FROM Booking b " +
-            "JOIN b.item i " +
-            "WHERE i.owner.id = :ownerId")
-    List<Booking> findByOwnerId(@Param("ownerId") Long ownerId);
+    List<Booking> findByItem_Owner_Id(Long ownerId);
 
     // Поиск последнего завершенного бронирования для вещи
     @Query("SELECT b FROM Booking b " +
@@ -45,4 +42,28 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "AND b.status = 'APPROVED' " +
             "AND b.endDate <= CURRENT_TIMESTAMP")
     boolean existsByUserAndItemAndApprovedStatus(@Param("userId") Long userId, @Param("itemId") Long itemId);
+
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
+            "FROM Booking b " +
+            "WHERE b.item.id = :itemId " +
+            "AND ((b.startDate <= :end AND b.endDate >= :start))")
+        // Пересечение временных интервалов
+    boolean existsByItemIdAndDateOverlap(
+            @Param("itemId") Long itemId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    // Проверка завершенного подтвержденного бронирования
+    @Query("SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END " +
+            "FROM Booking b " +
+            "WHERE b.booker.id = :userId " +
+            "AND b.item.id = :itemId " +
+            "AND b.status = 'APPROVED' " +
+            "AND b.endDate < :now")
+    boolean existsByUserAndItemAndApprovedStatusAndEndDateBefore(
+            @Param("userId") Long userId,
+            @Param("itemId") Long itemId,
+            @Param("now") LocalDateTime now
+    );
 }

@@ -148,10 +148,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         // 5. Создаем комментарий
-        Comment comment = CommentMapper.toComment(commentDto);
-        comment.setItem(item);
-        comment.setAuthor(user);
-        comment.setCreated(LocalDateTime.now());
+        Comment comment = CommentMapper.toComment(commentDto, item, user);
 
         // 6. Сохраняем комментарий
         Comment savedComment = commentRepository.save(comment);

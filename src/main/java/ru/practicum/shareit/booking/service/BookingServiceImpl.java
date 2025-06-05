@@ -8,7 +8,6 @@ import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.dto.BookingState;
-import ru.practicum.shareit.booking.mapper.BookingCreateMapper;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.mapper.BookingShortMapper;
 import ru.practicum.shareit.booking.model.Booking;
@@ -62,10 +61,12 @@ public class BookingServiceImpl implements BookingService {
         }
 
         // Создаем бронирование
-        Booking booking = BookingCreateMapper.toBooking(createDto, item, userRepository.findById(userId).orElseThrow());
+        Booking booking = BookingMapper.toBooking(createDto, item, booker);
 
         // Сохраняем бронирование
         Booking savedBooking = bookingRepository.save(booking);
+
+        // Преобразуем в DTO и возвращаем
         return BookingMapper.toBookingDto(savedBooking);
     }
 
@@ -117,7 +118,7 @@ public class BookingServiceImpl implements BookingService {
         var filteredBookings = filterBookingsByState(bookings, state);
 
         return filteredBookings.stream()
-                .map(BookingShortMapper::toBookingShortDto) // Используем BookingShortMapper
+                .map(BookingMapper::toBookingShortDto)
                 .collect(Collectors.toList());
     }
 
@@ -133,7 +134,7 @@ public class BookingServiceImpl implements BookingService {
 
         // Фильтруем по состоянию
         return filterBookingsByState(bookings, state).stream()
-                .map(BookingShortMapper::toBookingShortDto)
+                .map(BookingMapper::toBookingShortDto)
                 .collect(Collectors.toList());
     }
 

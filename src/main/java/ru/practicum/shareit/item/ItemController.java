@@ -1,9 +1,11 @@
 package ru.practicum.shareit.item;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.validation.OnCreate;
@@ -23,6 +25,19 @@ public class ItemController {
     public ItemDto addItem(@RequestBody @Validated(OnCreate.class) ItemDto dto,
                            @RequestHeader("X-Sharer-User-Id") Long userId) {
         return itemService.addItem(userId, dto);
+    }
+
+    // Добавление комментария
+    @PostMapping("/{itemId}/comment")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentDto addComment(
+            @PathVariable Long itemId,
+            @RequestBody @Valid CommentDto commentDto,
+            @RequestHeader("X-Sharer-User-Id") Long userId
+    ) {
+        // Вызываем метод сервиса
+        CommentDto result = itemService.addComment(userId, itemId, commentDto);
+        return result;
     }
 
     @PatchMapping("/{itemId}")

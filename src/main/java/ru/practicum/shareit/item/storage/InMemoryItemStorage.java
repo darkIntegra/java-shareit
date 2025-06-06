@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.storage;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import ru.practicum.shareit.item.model.Item;
 
@@ -8,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Component
+@Profile("in-memory")
 public class InMemoryItemStorage implements ItemStorage {
 
     private final Map<Long, Item> items = new HashMap<>();
@@ -40,7 +42,7 @@ public class InMemoryItemStorage implements ItemStorage {
     @Override
     public Collection<Item> getItemsByOwnerId(Long ownerId) {
         return items.values().stream()
-                .filter(item -> Objects.equals(item.getOwner().getUserId(), ownerId))
+                .filter(item -> Objects.equals(item.getOwner().getId(), ownerId))
                 .collect(Collectors.toList());
     }
 

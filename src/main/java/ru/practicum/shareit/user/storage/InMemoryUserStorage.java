@@ -1,5 +1,6 @@
 package ru.practicum.shareit.user.storage;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.user.model.User;
@@ -8,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Repository
+@Profile("in-memory")
 public class InMemoryUserStorage implements UserStorage {
 
     private final Map<Long, User> users = new HashMap<>();
@@ -16,30 +18,29 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User addUser(User user) {
-
-        // Проверяем уникальность email (убираем проверку из updateUser UserServiceImpl)
+        // Проверяем уникальность email
         if (!emails.add(user.getEmail())) {
             throw new ConflictException("Пользователь с таким email уже существует");
         }
-        user.setUserId(nextId.getAndIncrement());
-        users.put(user.getUserId(), user);
+        user.setId(nextId.getAndIncrement());
+        users.put(user.getId(), user);
         return user;
     }
 
     @Override
-    public User updateUser(long id, User updateUser) {
+    public User updateUser(Long id, User updateUser) {
         User existingUser = users.get(id);
         if (existingUser == null) {
             throw new NoSuchElementException("Пользователь с ID=" + id + " не найден");
         }
-        // Если email изменён, проверяем его уникальность (убираем проверку из updateUser UserServiceImpl)
+        // Если email изменён, проверяем его уникальность
         if (!Objects.equals(updateUser.getEmail(), existingUser.getEmail())) {
             if (!emails.add(updateUser.getEmail())) {
                 throw new ConflictException("Пользователь с таким email уже существует");
             }
             emails.remove(existingUser.getEmail()); // Удаляем старый email
         }
-        updateUser.setUserId(id);
+        updateUser.setId(id);
         users.put(id, updateUser);
         return updateUser;
     }
@@ -50,12 +51,12 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public Optional<User> findUserById(long id) {
+    public Optional<User> findUserById(Long id) {
         return Optional.ofNullable(users.get(id));
     }
 
     @Override
-    public void deleteUserById(long id) {
+    public void deleteUserById(Long id) {
         if (!users.containsKey(id)) {
             throw new NoSuchElementException("Пользователь с ID=" + id + " не найден");
         }

@@ -1,6 +1,5 @@
 package ru.practicum.shareit.server.controller;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.server.dto.item.CommentDto;
@@ -11,10 +10,13 @@ import java.util.Collection;
 
 @RestController
 @RequestMapping("/items")
-@RequiredArgsConstructor
 public class ItemController {
 
     private final ItemService itemService;
+
+    public ItemController(ItemService itemService) {
+        this.itemService = itemService;
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

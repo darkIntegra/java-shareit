@@ -11,10 +11,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/requests")
-@RequiredArgsConstructor
 public class RequestController {
 
     private final RequestService requestService;
+
+    public RequestController(RequestService requestService) {
+        this.requestService = requestService;
+    }
 
     // Создание нового запроса
     @PostMapping

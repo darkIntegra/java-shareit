@@ -2,7 +2,7 @@ package ru.practicum.shareit.server.storage.user;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
-import ru.practicum.shareit.server.exception.ConflictException;
+import exception.ConflictException;
 import ru.practicum.shareit.server.model.user.User;
 
 import java.util.*;

@@ -2,31 +2,35 @@ package ru.practicum.shareit.server.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import ru.practicum.shareit.server.dto.item.CommentDto;
 import ru.practicum.shareit.server.dto.item.ItemDto;
-import ru.practicum.shareit.server.model.booking.Booking;
-import ru.practicum.shareit.server.model.booking.BookingStatus;
+import exception.BadRequestException;
+import exception.ForbiddenException;
 import ru.practicum.shareit.server.model.item.Comment;
 import ru.practicum.shareit.server.model.item.Item;
+import ru.practicum.shareit.server.model.request.Request;
 import ru.practicum.shareit.server.model.user.User;
 import ru.practicum.shareit.server.repository.booking.BookingRepository;
 import ru.practicum.shareit.server.repository.item.CommentRepository;
 import ru.practicum.shareit.server.service.item.ItemService;
 import ru.practicum.shareit.server.storage.item.ItemStorage;
+import ru.practicum.shareit.server.storage.request.RequestStorage;
 import ru.practicum.shareit.server.storage.user.UserStorage;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class ItemServiceTest {
 
     @Autowired
@@ -34,6 +38,9 @@ class ItemServiceTest {
 
     @MockBean
     private ItemStorage itemStorage;
+
+    @MockBean
+    private RequestStorage requestStorage;
 
     @MockBean
     private UserStorage userStorage;
@@ -65,73 +72,105 @@ class ItemServiceTest {
     }
 
     @Test
-    void testAddItem() {
-        // Arrange
+    void addItem_ShouldThrowException_WhenRequestIdIsInvalid() {
+        Long userId = 1L;
         ItemDto dto = ItemDto.builder()
                 .name("New Item")
                 .description("Description of new item")
                 .available(true)
+                .requestId(999L) // Несуществующий requestId
                 .build();
 
-        when(userStorage.findUserById(1L)).thenReturn(Optional.of(owner));
+        when(userStorage.findUserById(userId)).thenReturn(Optional.of(owner));
+        when(requestStorage.findRequestById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> itemService.addItem(userId, dto));
+        verify(requestStorage, times(1)).findRequestById(999L);
+    }
+
+    @Test
+    void addItem_ShouldAddItem_WhenRequestIdIsValid() {
+        Long userId = 1L;
+        ItemDto dto = ItemDto.builder()
+                .name("New Item")
+                .description("Description of new item")
+                .available(true)
+                .requestId(1L) // Существующий requestId
+                .build();
+
+        Request request = new Request();
+        request.setId(1L);
+
+        when(userStorage.findUserById(userId)).thenReturn(Optional.of(owner));
+        when(requestStorage.findRequestById(1L)).thenReturn(Optional.of(request));
         when(itemStorage.addItem(any(Item.class))).thenAnswer(invocation -> {
             Item savedItem = invocation.getArgument(0);
             savedItem.setId(2L); // Устанавливаем ID для сохраненной вещи
             return savedItem;
         });
 
-        // Act
-        ItemDto addedItem = itemService.addItem(1L, dto);
+        ItemDto addedItem = itemService.addItem(userId, dto);
 
-        // Assert
         assertThat(addedItem).isNotNull();
         assertThat(addedItem.getName()).isEqualTo(dto.getName());
-        assertThat(addedItem.getDescription()).isEqualTo(dto.getDescription());
-        assertThat(addedItem.getAvailable()).isEqualTo(dto.getAvailable());
-
+        assertThat(addedItem.getRequestId()).isEqualTo(dto.getRequestId());
         verify(itemStorage, times(1)).addItem(any(Item.class));
     }
 
     @Test
-    void testUpdateItem() {
-        // Arrange
+    void updateItem_ShouldThrowException_WhenUserIsNotOwner() {
+        Long userId = 2L; // Другой пользователь
+        Long itemId = 1L;
         ItemDto dto = ItemDto.builder()
                 .name("Updated Name")
                 .description("Updated Description")
                 .available(false)
                 .build();
 
-        // Создаем объект Item для мока
-        Item existingItem = new Item();
-        existingItem.setId(1L);
-        existingItem.setName("Old Name");
-        existingItem.setDescription("Old Description");
-        existingItem.setAvailable(true);
-        existingItem.setOwner(owner);
+        when(itemStorage.findItemById(itemId)).thenReturn(Optional.of(item));
 
-        // Настройка мока
-        when(itemStorage.findItemById(1L)).thenReturn(Optional.of(existingItem));
-        when(itemStorage.updateItem(eq(1L), any(Item.class))).thenAnswer(invocation -> {
-            Item updatedItem = invocation.getArgument(1); // Второй аргумент (обновленная вещь)
-            return updatedItem;
-        });
-
-        // Act
-        ItemDto updatedItem = itemService.updateItem(1L, 1L, dto);
-
-        // Assert
-        assertThat(updatedItem).isNotNull();
-        assertThat(updatedItem.getName()).isEqualTo(dto.getName());
-        assertThat(updatedItem.getDescription()).isEqualTo(dto.getDescription());
-        assertThat(updatedItem.getAvailable()).isEqualTo(dto.getAvailable());
-
-        verify(itemStorage, times(1)).findItemById(1L);
-        verify(itemStorage, times(1)).updateItem(eq(1L), any(Item.class));
+        assertThrows(ForbiddenException.class, () -> itemService.updateItem(userId, itemId, dto));
+        verify(itemStorage, times(1)).findItemById(itemId);
     }
 
     @Test
-    void testGetItemById() {
+    void searchItems_ShouldReturnMatchingItems_WhenTextIsProvided() {
+        String text = "bike";
+        Item matchingItem = new Item();
+        matchingItem.setId(1L);
+        matchingItem.setName("Bike");
+        matchingItem.setDescription("Mountain bike for rent");
+        matchingItem.setAvailable(true);
+
+        when(itemStorage.getAllItems()).thenReturn(List.of(matchingItem));
+
+        Collection<ItemDto> result = itemService.searchItems(text);
+
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+        assertEquals("Bike", result.iterator().next().getName());
+    }
+
+    @Test
+    void addComment_ShouldThrowException_WhenUserHasNoBooking() {
+        Long userId = 1L;
+        Long itemId = 1L;
+        CommentDto commentDto = CommentDto.builder()
+                .text("Great item!")
+                .build();
+
+        when(userStorage.findUserById(userId)).thenReturn(Optional.of(owner));
+        when(itemStorage.findItemById(itemId)).thenReturn(Optional.of(item));
+        when(bookingRepository.existsByUserAndItemAndApprovedStatus(userId, itemId)).thenReturn(false);
+
+        assertThrows(BadRequestException.class, () -> itemService.addComment(userId, itemId, commentDto));
+    }
+
+    @Test
+    void getItemById_ShouldReturnItemWithComments() {
         // Arrange
+        Long itemId = 1L;
+
         Comment comment = new Comment();
         comment.setId(1L);
         comment.setText("Great item!");
@@ -139,63 +178,111 @@ class ItemServiceTest {
         comment.setAuthor(owner);
         comment.setCreated(LocalDateTime.now());
 
-        when(itemStorage.findItemById(1L)).thenReturn(Optional.of(item));
-        when(commentRepository.findByItemId(1L)).thenReturn(List.of(comment));
+        when(itemStorage.findItemById(itemId)).thenReturn(Optional.of(item));
+        when(commentRepository.findByItemId(itemId)).thenReturn(List.of(comment));
 
         // Act
-        ItemDto itemDto = itemService.getItemById(1L);
+        ItemDto result = itemService.getItemById(itemId);
 
         // Assert
-        assertThat(itemDto).isNotNull();
-        assertThat(itemDto.getComments()).hasSize(1);
-        assertThat(itemDto.getComments().get(0).getText()).isEqualTo("Great item!");
-
-        verify(itemStorage, times(1)).findItemById(1L);
+        assertNotNull(result);
+        assertEquals(item.getName(), result.getName());
+        assertFalse(result.getComments().isEmpty());
+        assertEquals("Great item!", result.getComments().get(0).getText());
     }
 
     @Test
-    void testAddComment() {
+    void getAllItems_ShouldReturnEmptyList_WhenUserHasNoItems() {
         // Arrange
+        Long userId = 1L;
+
+        when(itemStorage.getItemsByOwnerId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        Collection<ItemDto> result = itemService.getAllItems(userId);
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void deleteItemById_ShouldDeleteItem() {
+        // Arrange
+        Long itemId = 1L;
+
+        doNothing().when(itemStorage).deleteItemById(itemId);
+
+        // Act
+        itemService.deleteItemById(itemId);
+
+        // Assert
+        verify(itemStorage, times(1)).deleteItemById(itemId);
+    }
+
+    @Test
+    void deleteAllItems_ShouldDeleteAllItems() {
+        // Arrange
+        doNothing().when(itemStorage).deleteAllItems();
+
+        // Act
+        itemService.deleteAllItems();
+
+        // Assert
+        verify(itemStorage, times(1)).deleteAllItems();
+    }
+
+    @Test
+    void addComment_ShouldThrowException_WhenBookingIsNotCompleted() {
+        // Arrange
+        Long userId = 1L;
+        Long itemId = 1L;
         CommentDto commentDto = CommentDto.builder()
                 .text("Great item!")
                 .build();
 
-        Booking booking = new Booking();
-        booking.setId(1L);
-        booking.setStartDate(LocalDateTime.now().minusDays(10)); // Начало бронирования 10 дней назад
-        booking.setEndDate(LocalDateTime.now().minusDays(5));    // Окончание бронирования 5 дней назад
-        booking.setStatus(BookingStatus.APPROVED);
+        when(userStorage.findUserById(userId)).thenReturn(Optional.of(owner));
+        when(itemStorage.findItemById(itemId)).thenReturn(Optional.of(item));
+        when(bookingRepository.existsByUserAndItemAndApprovedStatus(userId, itemId)).thenReturn(true);
+        when(bookingRepository.existsByUserAndItemAndApprovedStatusAndEndDateBefore(userId, itemId, LocalDateTime.now()))
+                .thenReturn(false);
 
-        // Фиксируем текущее время
-        LocalDateTime now = LocalDateTime.of(2025, 6, 17, 13, 23, 8);
-
-        // Мок для LocalDateTime.now()
-        try (MockedStatic<LocalDateTime> mockedStatic = mockStatic(LocalDateTime.class)) {
-            mockedStatic.when(LocalDateTime::now).thenReturn(now);
-
-            when(userStorage.findUserById(1L)).thenReturn(Optional.of(owner));
-            when(itemStorage.findItemById(1L)).thenReturn(Optional.of(item));
-            when(bookingRepository.existsByUserAndItemAndApprovedStatus(1L, 1L)).thenReturn(true);
-
-            // Настройка мока для existsByUserAndItemAndApprovedStatusAndEndDateBefore
-            when(bookingRepository.existsByUserAndItemAndApprovedStatusAndEndDateBefore(
-                    eq(1L), eq(1L), eq(now)
-            )).thenReturn(true);
-
-            when(commentRepository.save(any(Comment.class))).thenAnswer(invocation -> {
-                Comment savedComment = invocation.getArgument(0);
-                savedComment.setId(1L);
-                return savedComment;
-            });
-
-            // Act
-            CommentDto addedComment = itemService.addComment(1L, 1L, commentDto);
-
-            // Assert
-            assertThat(addedComment).isNotNull();
-            assertThat(addedComment.getText()).isEqualTo(commentDto.getText());
-
-            verify(commentRepository, times(1)).save(any(Comment.class));
-        }
+        // Act & Assert
+        assertThrows(BadRequestException.class, () -> itemService.addComment(userId, itemId, commentDto));
     }
+
+    @Test
+    void searchItems_ShouldReturnEmptyList_WhenTextIsEmpty() {
+        // Arrange
+        String text = "";
+
+        // Act
+        Collection<ItemDto> result = itemService.searchItems(text);
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void updateItem_ShouldUpdateOnlyProvidedFields() {
+        // Arrange
+        Long userId = 1L;
+        Long itemId = 1L;
+        ItemDto dto = ItemDto.builder()
+                .name("Updated Name")
+                .build();
+
+        when(itemStorage.findItemById(itemId)).thenReturn(Optional.of(item));
+        when(itemStorage.updateItem(eq(itemId), any(Item.class)))
+                .thenAnswer(invocation -> invocation.getArgument(1));
+
+        // Act
+        ItemDto updatedItem = itemService.updateItem(userId, itemId, dto);
+
+        // Assert
+        assertEquals("Updated Name", updatedItem.getName());
+        assertEquals(item.getDescription(), updatedItem.getDescription()); // Не должно измениться
+        assertEquals(item.getAvailable(), updatedItem.getAvailable()); // Не должно измениться
+    }
+
+
 }

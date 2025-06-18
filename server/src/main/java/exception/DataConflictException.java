@@ -1,4 +1,4 @@
-package ru.practicum.shareit.server.exception;
+package exception;
 
 public class DataConflictException extends RuntimeException {
     public DataConflictException(String message) {

@@ -4,8 +4,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import ru.practicum.shareit.server.exception.ForbiddenException;
-import ru.practicum.shareit.server.exception.NotFoundException;
+import exception.ForbiddenException;
+import exception.NotFoundException;
 import ru.practicum.shareit.server.model.booking.BookingStatus;
 import ru.practicum.shareit.server.dto.booking.BookingCreateDto;
 import ru.practicum.shareit.server.dto.booking.BookingDto;

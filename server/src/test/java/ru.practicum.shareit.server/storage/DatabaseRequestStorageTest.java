@@ -13,6 +13,7 @@ import ru.practicum.shareit.server.repository.request.RequestRepository;
 import ru.practicum.shareit.server.repository.user.UserRepository;
 import ru.practicum.shareit.server.storage.request.DatabaseRequestStorage;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -53,6 +54,7 @@ class DatabaseRequestStorageTest {
         request = new Request();
         request.setDescription("Request for a bike");
         request.setRequester(requester);
+        request.setCreated(LocalDateTime.now());
     }
 
     private void clearDatabase() {

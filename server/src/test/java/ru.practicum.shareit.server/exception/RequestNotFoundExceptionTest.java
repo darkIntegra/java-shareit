@@ -1,6 +1,5 @@
 package ru.practicum.shareit.server.exception;
 
-import exception.RequestNotFoundException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

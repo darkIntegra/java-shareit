@@ -1,7 +1,7 @@
 package ru.practicum.shareit.server.service;
 
-import exception.ForbiddenException;
-import exception.NotFoundException;
+import ru.practicum.shareit.server.exception.ForbiddenException;
+import ru.practicum.shareit.server.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

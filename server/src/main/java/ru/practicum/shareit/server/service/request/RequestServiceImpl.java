@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import exception.NotFoundException;
+import ru.practicum.shareit.server.exception.NotFoundException;
 import ru.practicum.shareit.server.model.item.Item;
 import ru.practicum.shareit.server.repository.item.ItemRepository;
 import ru.practicum.shareit.server.dto.request.RequestDto;

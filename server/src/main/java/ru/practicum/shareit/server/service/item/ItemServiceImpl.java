@@ -3,11 +3,11 @@ package ru.practicum.shareit.server.service.item;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import exception.NotFoundException;
+import ru.practicum.shareit.server.exception.NotFoundException;
 import ru.practicum.shareit.server.model.booking.Booking;
 import ru.practicum.shareit.server.repository.booking.BookingRepository;
-import exception.BadRequestException;
-import exception.ForbiddenException;
+import ru.practicum.shareit.server.exception.BadRequestException;
+import ru.practicum.shareit.server.exception.ForbiddenException;
 
 import ru.practicum.shareit.server.dto.item.CommentDto;
 import ru.practicum.shareit.server.dto.item.ItemDto;

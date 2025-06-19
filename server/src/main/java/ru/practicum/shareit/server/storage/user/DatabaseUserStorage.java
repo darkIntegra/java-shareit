@@ -3,7 +3,7 @@ package ru.practicum.shareit.server.storage.user;
 import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
-import exception.ConflictException;
+import ru.practicum.shareit.server.exception.ConflictException;
 import ru.practicum.shareit.server.model.user.User;
 import ru.practicum.shareit.server.repository.user.UserRepository;
 

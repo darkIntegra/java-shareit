@@ -48,7 +48,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <systemPropertyVariables>
-                            <spring.profiles.active>test</spring.profiles.active>
+                            <spring.profiles.active>docker</spring.profiles.active>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>

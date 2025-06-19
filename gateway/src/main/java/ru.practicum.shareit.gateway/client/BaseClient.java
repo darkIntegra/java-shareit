@@ -5,70 +5,94 @@ import org.springframework.lang.Nullable;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-public abstract class BaseClient {
+
+public class BaseClient {
     protected final RestTemplate rest;
 
     public BaseClient(RestTemplate rest) {
         this.rest = rest;
     }
 
-    // GET request
-    protected ResponseEntity<Object> get(String path, @Nullable Long userId, @Nullable Map<String, Object> parameters) {
+    protected ResponseEntity<Object> get(String path) {
+        return get(path, null, null);
+    }
+
+    protected ResponseEntity<Object> get(String path, long userId) {
+        return get(path, userId, null);
+    }
+
+    protected ResponseEntity<Object> get(String path, Long userId, @Nullable Map<String, Object> parameters) {
         return makeAndSendRequest(HttpMethod.GET, path, userId, parameters, null);
     }
 
-    // POST request
-    protected <T> ResponseEntity<Object> post(String path, @Nullable Long userId, @Nullable Map<String, Object> parameters, T body) {
+    protected <T> ResponseEntity<Object> post(String path, T body) {
+        return post(path, null, null, body);
+    }
+
+    protected <T> ResponseEntity<Object> post(String path, long userId, T body) {
+        return post(path, userId, null, body);
+    }
+
+    protected <T> ResponseEntity<Object> post(String path, Long userId, @Nullable Map<String, Object> parameters, T body) {
         return makeAndSendRequest(HttpMethod.POST, path, userId, parameters, body);
     }
 
-    // PUT request
-    protected <T> ResponseEntity<Object> put(String path, @Nullable Long userId, @Nullable Map<String, Object> parameters, T body) {
+    protected <T> ResponseEntity<Object> put(String path, long userId, T body) {
+        return put(path, userId, null, body);
+    }
+
+    protected <T> ResponseEntity<Object> put(String path, long userId, @Nullable Map<String, Object> parameters, T body) {
         return makeAndSendRequest(HttpMethod.PUT, path, userId, parameters, body);
     }
 
-    // PATCH request
-    protected <T> ResponseEntity<Object> patch(String path, @Nullable Long userId, @Nullable Map<String, Object> parameters, T body) {
+    protected <T> ResponseEntity<Object> patch(String path, T body) {
+        return patch(path, null, null, body);
+    }
+
+    protected <T> ResponseEntity<Object> patch(String path, long userId) {
+        return patch(path, userId, null, null);
+    }
+
+    protected <T> ResponseEntity<Object> patch(String path, long userId, T body) {
+        return patch(path, userId, null, body);
+    }
+
+    protected <T> ResponseEntity<Object> patch(String path, Long userId, @Nullable Map<String, Object> parameters, T body) {
         return makeAndSendRequest(HttpMethod.PATCH, path, userId, parameters, body);
     }
 
-    // DELETE request
-    protected ResponseEntity<Object> delete(String path, @Nullable Long userId, @Nullable Map<String, Object> parameters) {
+    protected ResponseEntity<Object> delete(String path) {
+        return delete(path, null, null);
+    }
+
+    protected ResponseEntity<Object> delete(String path, long userId) {
+        return delete(path, userId, null);
+    }
+
+    protected ResponseEntity<Object> delete(String path, Long userId, @Nullable Map<String, Object> parameters) {
         return makeAndSendRequest(HttpMethod.DELETE, path, userId, parameters, null);
     }
 
-    // Общий метод для отправки запросов
-    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method, String path, Long userId,
-                                                          @Nullable Map<String, Object> parameters, @Nullable T body) {
+    //Здесь происходит отправка
+    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method, String path, Long userId, @Nullable Map<String, Object> parameters, @Nullable T body) {
         HttpEntity<T> requestEntity = new HttpEntity<>(body, defaultHeaders(userId));
-        System.out.println("Отправляем PATCH-запрос:");
-        System.out.println("Path: " + path);
-        System.out.println("Method: " + method);
-        System.out.println("Parameters: " + parameters);
-        System.out.println("Body: " + body);
 
+        ResponseEntity<Object> shareitServerResponse;
         try {
-            ResponseEntity<Object> response = rest.exchange(
-                    path,
-                    method,
-                    requestEntity,
-                    Object.class,
-                    parameters != null ? parameters : new HashMap<>()
-            );
-            System.out.println("Получен ответ от сервера: " + response.getStatusCode());
-            return response;
+            if (parameters != null) {
+                shareitServerResponse = rest.exchange(path, method, requestEntity, Object.class, parameters);
+            } else {
+                shareitServerResponse = rest.exchange(path, method, requestEntity, Object.class);
+            }
         } catch (HttpStatusCodeException e) {
-            System.out.println("Ошибка при отправке запроса: " + e.getStatusCode());
             return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
         }
+        return prepareGatewayResponse(shareitServerResponse);
     }
 
-    // Формирование заголовков
     private HttpHeaders defaultHeaders(Long userId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -79,13 +103,17 @@ public abstract class BaseClient {
         return headers;
     }
 
-    // Подготовка ответа
     private static ResponseEntity<Object> prepareGatewayResponse(ResponseEntity<Object> response) {
-        return Optional.ofNullable(response)
-                .filter(r -> r.getStatusCode().is2xxSuccessful())
-                .orElseGet(() -> {
-                    ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(response.getStatusCode());
-                    return response.hasBody() ? responseBuilder.body(response.getBody()) : responseBuilder.build();
-                });
+        if (response.getStatusCode().is2xxSuccessful()) {
+            return response;
+        }
+
+        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(response.getStatusCode());
+
+        if (response.hasBody()) {
+            return responseBuilder.body(response.getBody());
+        }
+
+        return responseBuilder.build();
     }
 }

@@ -1,5 +1,6 @@
 package ru.practicum.shareit.server.mapper.request;
 
+import ru.practicum.shareit.server.dto.item.ItemDto;
 import ru.practicum.shareit.server.dto.item.RequestItemDto;
 import ru.practicum.shareit.server.model.item.Item;
 import ru.practicum.shareit.server.dto.request.RequestDto;
@@ -29,7 +30,7 @@ public class RequestMapper {
                 .description(request.getDescription())
                 .created(request.getCreated())
                 .items(items.stream()
-                        .map(RequestMapper::toRequestItemDto) // Преобразуем каждую вещь в RequestItemDto
+                        .map(RequestMapper::toItemDto) // Преобразуем каждую вещь в ItemDto
                         .collect(Collectors.toList()))
                 .build();
     }
@@ -43,11 +44,23 @@ public class RequestMapper {
     }
 
     // Преобразование сущности Item в RequestItemDto
-    public static RequestItemDto toRequestItemDto(Item item) {
+    public static RequestItemDto toRequestItemDto(Item item, LocalDateTime created) {
         return RequestItemDto.builder()
                 .id(item.getId())
                 .name(item.getName())
                 .ownerId(item.getOwner().getId()) // Получаем ownerId из связанного пользователя
+                .created(created)
+                .build();
+    }
+
+    // Преобразование сущности Item в ItemDto
+    public static ItemDto toItemDto(Item item) {
+        return ItemDto.builder()
+                .id(item.getId())
+                .name(item.getName())
+                .description(item.getDescription())
+                .available(item.getAvailable())
+                .requestId(item.getRequestId()) // ID запроса, на который отвечает вещь
                 .build();
     }
 }

@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.gateway.dto.item.RequestItemDto;
+import ru.practicum.shareit.gateway.dto.item.ItemDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,5 +23,5 @@ public class RequestDto {
 
     private LocalDateTime created;
 
-    private List<RequestItemDto> items;
+    private List<ItemDto> items;
 }

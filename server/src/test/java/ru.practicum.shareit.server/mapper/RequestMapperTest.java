@@ -32,30 +32,46 @@ class RequestMapperTest {
 
     @Test
     void testToRequestDto_WithItems() {
+        // Создаем тестовые данные для Request
         Request request = new Request();
         request.setId(1L);
         request.setDescription("Test Request");
-        request.setCreated(LocalDateTime.now());
+        LocalDateTime created = LocalDateTime.now();
+        request.setCreated(created);
 
+        // Создаем тестовые данные для Item
         Item item1 = new Item();
         item1.setId(2L);
         item1.setName("Item 1");
+        item1.setDescription("Test Item Description");
+        item1.setAvailable(true);
 
+        // Устанавливаем связь с Request через request_id
+        item1.setRequestId(request.getId());
+
+        // Создаем владельца (User) для Item
         User owner = new User();
         owner.setId(3L);
         item1.setOwner(owner);
 
+        // Создаем список вещей
         List<Item> items = List.of(item1);
 
+        // Вызываем метод маппера
         RequestDto dto = RequestMapper.toRequestDto(request, items);
 
+        // Проверяем результаты для RequestDto
         assertThat(dto.getId()).isEqualTo(request.getId());
         assertThat(dto.getDescription()).isEqualTo(request.getDescription());
         assertThat(dto.getCreated()).isEqualTo(request.getCreated());
-        assertThat(dto.getItems()).hasSize(1);
-        assertThat(dto.getItems().get(0).getId()).isEqualTo(item1.getId());
-        assertThat(dto.getItems().get(0).getName()).isEqualTo(item1.getName());
-        assertThat(dto.getItems().get(0).getOwnerId()).isEqualTo(owner.getId());
+
+        // Проверяем результаты для списка вещей
+        assertThat(dto.getItems()).hasSize(1); // Проверяем размер списка
+        assertThat(dto.getItems().get(0).getId()).isEqualTo(item1.getId()); // Проверяем ID вещи
+        assertThat(dto.getItems().get(0).getName()).isEqualTo(item1.getName()); // Проверяем имя вещи
+        assertThat(dto.getItems().get(0).getDescription()).isEqualTo(item1.getDescription()); // Проверяем описание
+        assertThat(dto.getItems().get(0).getAvailable()).isEqualTo(item1.getAvailable()); // Проверяем доступность
+        assertThat(dto.getItems().get(0).getRequestId()).isEqualTo(item1.getRequestId()); // Проверяем request_id
     }
 
     @Test
@@ -79,10 +95,14 @@ class RequestMapperTest {
         owner.setId(2L);
         item.setOwner(owner);
 
-        RequestItemDto itemDto = RequestMapper.toRequestItemDto(item);
+        // Создаем дату для поля created
+        LocalDateTime now = LocalDateTime.now();
+
+        RequestItemDto itemDto = RequestMapper.toRequestItemDto(item, now);
 
         assertThat(itemDto.getId()).isEqualTo(item.getId());
         assertThat(itemDto.getName()).isEqualTo(item.getName());
         assertThat(itemDto.getOwnerId()).isEqualTo(owner.getId());
+        assertThat(itemDto.getCreated()).isEqualTo(now);
     }
 }

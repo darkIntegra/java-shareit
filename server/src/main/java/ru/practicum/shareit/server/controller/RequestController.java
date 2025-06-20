@@ -1,7 +1,8 @@
 package ru.practicum.shareit.server.controller;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.server.dto.request.RequestDto;
 import ru.practicum.shareit.server.service.request.RequestService;
@@ -10,43 +11,42 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/requests")
+@RequiredArgsConstructor
+@Slf4j
 public class RequestController {
 
     private final RequestService requestService;
 
-    public RequestController(RequestService requestService) {
-        this.requestService = requestService;
-    }
-
     // Создание нового запроса
     @PostMapping
-    public ResponseEntity<RequestDto> createRequest(
+    @ResponseStatus(HttpStatus.CREATED)
+    public RequestDto createRequest(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @RequestBody RequestDto requestDto) {
-        RequestDto createdRequest = requestService.createRequest(userId, requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdRequest);
+        log.info("POST-запрос на создание запроса: {}, userId={}", requestDto, userId);
+        return requestService.createRequest(userId, requestDto);
     }
 
     // Получение всех запросов текущего пользователя
     @GetMapping
-    public ResponseEntity<List<RequestDto>> getAllRequestsByUser(
+    public List<RequestDto> getAllRequestsByUser(
             @RequestHeader("X-Sharer-User-Id") Long userId) {
-        List<RequestDto> requests = requestService.getAllRequestsByUser(userId);
-        return ResponseEntity.ok(requests);
+        log.info("GET-запрос на получение всех запросов пользователя: userId={}", userId);
+        return requestService.getAllRequestsByUser(userId);
     }
 
     // Получение всех запросов, кроме тех, что созданы текущим пользователем
     @GetMapping("/all")
-    public ResponseEntity<List<RequestDto>> getAllRequestsExcludingUser(
+    public List<RequestDto> getAllRequestsExcludingUser(
             @RequestHeader("X-Sharer-User-Id") Long userId) {
-        List<RequestDto> requests = requestService.getAllRequestsExcludingUser(userId);
-        return ResponseEntity.ok(requests);
+        log.info("GET-запрос на получение всех запросов, кроме запросов пользователя: userId={}", userId);
+        return requestService.getAllRequestsExcludingUser(userId);
     }
 
     // Получение одного запроса по ID
     @GetMapping("/{requestId}")
-    public ResponseEntity<RequestDto> getRequestById(@PathVariable Long requestId) {
-        RequestDto request = requestService.getRequestById(requestId);
-        return ResponseEntity.ok(request);
+    public RequestDto getRequestById(@PathVariable Long requestId) {
+        log.info("GET-запрос на получение запроса: requestId={}", requestId);
+        return requestService.getRequestById(requestId);
     }
 }

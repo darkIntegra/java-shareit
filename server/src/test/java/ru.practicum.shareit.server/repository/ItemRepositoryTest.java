@@ -1,5 +1,7 @@
 package ru.practicum.shareit.server.repository;
 
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +61,15 @@ class ItemRepositoryTest {
         item2.setAvailable(false); // Недоступная вещь
         item2.setOwner(owner);
         entityManager.persist(item2);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Очищаем таблицы в обратном порядке (сначала зависимые таблицы)
+        EntityManager em = entityManager.getEntityManager();
+        em.createQuery("DELETE FROM Item").executeUpdate();
+        em.createQuery("DELETE FROM Request").executeUpdate();
+        em.createQuery("DELETE FROM User").executeUpdate();
     }
 
     @Test

@@ -1,5 +1,7 @@
 package ru.practicum.shareit.server.repository;
 
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BookingRepositoryTest {
 
     @Autowired
-    private TestEntityManager entityManager;
+    private TestEntityManager testEntityManager;
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -38,12 +40,12 @@ class BookingRepositoryTest {
         owner = new User();
         owner.setName("Owner");
         owner.setEmail("owner@example.com");
-        entityManager.persist(owner);
+        testEntityManager.persist(owner);
 
         booker = new User();
         booker.setName("Booker");
         booker.setEmail("booker@example.com");
-        entityManager.persist(booker);
+        testEntityManager.persist(booker);
 
         // Создаем вещь
         item = new Item();
@@ -51,7 +53,7 @@ class BookingRepositoryTest {
         item.setDescription("Description");
         item.setAvailable(true);
         item.setOwner(owner);
-        entityManager.persist(item);
+        testEntityManager.persist(item);
 
         // Создаем бронирования
         booking1 = new Booking();
@@ -60,7 +62,7 @@ class BookingRepositoryTest {
         booking1.setItem(item);
         booking1.setBooker(booker);
         booking1.setStatus(BookingStatus.APPROVED);
-        entityManager.persist(booking1);
+        testEntityManager.persist(booking1);
 
         booking2 = new Booking();
         booking2.setStartDate(LocalDateTime.now().plusDays(1));
@@ -68,7 +70,18 @@ class BookingRepositoryTest {
         booking2.setItem(item);
         booking2.setBooker(booker);
         booking2.setStatus(BookingStatus.APPROVED);
-        entityManager.persist(booking2);
+        testEntityManager.persist(booking2);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Получаем EntityManager из TestEntityManager
+        EntityManager entityManager = testEntityManager.getEntityManager();
+
+        // Очищаем таблицы в обратном порядке (сначала зависимые таблицы)
+        entityManager.createQuery("DELETE FROM Booking").executeUpdate();
+        entityManager.createQuery("DELETE FROM Item").executeUpdate();
+        entityManager.createQuery("DELETE FROM User").executeUpdate();
     }
 
     @Test

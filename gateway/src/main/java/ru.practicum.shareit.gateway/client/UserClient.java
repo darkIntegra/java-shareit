@@ -29,8 +29,6 @@ public class UserClient extends BaseClient {
     // Обновление пользователя
     public ResponseEntity<Object> updateUser(Long userId, UserDto userDto) {
         String path = "/" + userId;
-        System.out.println("Sending PATCH request to URL: " + path);
-        System.out.println("Request body: " + userDto);
         return patch(path, userId, null, userDto);
     }
 

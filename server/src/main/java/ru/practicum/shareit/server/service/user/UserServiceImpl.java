@@ -1,6 +1,7 @@
 package ru.practicum.shareit.server.service.user;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.server.dto.user.UserDto;
 import ru.practicum.shareit.server.mapper.user.UserMapper;
@@ -26,9 +27,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto updateUser(Long id, UserDto dto) {
-        System.out.println("Обновление пользователя с ID: " + id);
-        System.out.println("DTO запроса: " + dto);
-
         User existingUser = userStorage.findUserById(id)
                 .orElseThrow(() -> new NoSuchElementException("Пользователь с ID=" + id + " не найден"));
 
@@ -39,18 +37,16 @@ public class UserServiceImpl implements UserService {
             existingUser.setEmail(dto.getEmail());
         }
 
-        System.out.println("Обновленная сущность пользователя: " + existingUser);
-
         User updatedUser = userStorage.updateUser(id, existingUser);
         if (updatedUser == null) {
             throw new IllegalStateException("Хранилище пользователей вернуло null после обновления");
         }
 
-        System.out.println("Возвращаем DTO обновленного пользователя");
         return UserMapper.toUserDto(updatedUser);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserDto getUserById(Long id) {
         return userStorage.findUserById(id)
                 .map(UserMapper::toUserDto)
@@ -58,6 +54,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<UserDto> getAllUsers() {
         return userStorage.getAllUsers().stream()
                 .map(UserMapper::toUserDto)

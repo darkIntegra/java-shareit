@@ -1,14 +1,15 @@
 package ru.practicum.shareit.gateway.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
+@Slf4j
 @Configuration
 public class GatewayConfig {
 
@@ -20,12 +21,9 @@ public class GatewayConfig {
         // Добавляем MessageConverters для поддержки JSON
         restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
 
-        // Добавляем логирование HTTP-запросов
+        // Логируем только основную информацию о запросе
         restTemplate.setInterceptors(Collections.singletonList((request, body, execution) -> {
-            System.out.println("URI: " + request.getURI());
-            System.out.println("Method: " + request.getMethod());
-            System.out.println("Headers: " + request.getHeaders());
-            System.out.println("Body: " + new String(body, StandardCharsets.UTF_8));
+            log.info("HTTP {} request to {}", request.getMethod(), request.getURI());
             return execution.execute(request, body);
         }));
 

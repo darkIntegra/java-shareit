@@ -1,8 +1,7 @@
 package ru.practicum.shareit.server.service.request;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit.server.exception.NotFoundException;
@@ -23,14 +22,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
 
-    @Autowired
-    private RequestRepository requestRepository;
-
-    @Autowired
-    private ItemRepository itemRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final RequestRepository requestRepository;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -53,7 +47,7 @@ public class RequestServiceImpl implements RequestService {
 
     // Получить все запросы конкретного пользователя
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<RequestDto> getAllRequestsByUser(Long userId) {
         // Находим все запросы пользователя
         List<Request> requests = requestRepository.findByRequesterIdOrderByCreatedDesc(userId);
@@ -66,7 +60,7 @@ public class RequestServiceImpl implements RequestService {
 
     // Получить все запросы, кроме тех, что созданы конкретным пользователем
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public List<RequestDto> getAllRequestsExcludingUser(Long userId) {
         // Находим все запросы, кроме тех, что созданы пользователем
         List<Request> requests = requestRepository.findAllExcludingRequester(userId);
@@ -79,7 +73,7 @@ public class RequestServiceImpl implements RequestService {
 
     // Получить один запрос по ID
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public RequestDto getRequestById(Long requestId) {
         // Находим запрос
         Request request = requestRepository.findById(requestId)

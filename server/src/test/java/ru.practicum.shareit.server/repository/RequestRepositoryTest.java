@@ -1,5 +1,7 @@
 package ru.practicum.shareit.server.repository;
 
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +56,14 @@ class RequestRepositoryTest {
         request2.setCreated(LocalDateTime.now());
         request2.setRequester(user2);
         entityManager.persist(request2);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Очищаем таблицы в обратном порядке (сначала зависимые таблицы)
+        EntityManager em = entityManager.getEntityManager();
+        em.createQuery("DELETE FROM Request").executeUpdate();
+        em.createQuery("DELETE FROM User").executeUpdate();
     }
 
     @Test

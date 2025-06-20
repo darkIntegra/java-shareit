@@ -1,6 +1,6 @@
 package ru.practicum.shareit.server.service.item;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.server.exception.NotFoundException;
@@ -79,6 +79,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ItemDto getItemById(Long itemId) {
         Item item = itemStorage.findItemById(itemId)
                 .orElseThrow(() -> new NoSuchElementException("Вещь с ID=" + itemId + " не найдена"));
@@ -91,6 +92,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<ItemDto> getAllItems(Long userId) {
         // Получаем вещи пользователя
         Collection<Item> items = itemStorage.getItemsByOwnerId(userId);
@@ -101,6 +103,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<ItemDto> getItemsByOwnerId(Long ownerId) {
         Collection<Item> items = itemStorage.getItemsByOwnerId(ownerId);
         return items.stream()
@@ -109,6 +112,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Collection<ItemDto> searchItems(String text) {
         if (text == null || text.isBlank()) {
             return Collections.emptyList();

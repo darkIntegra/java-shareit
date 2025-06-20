@@ -1,6 +1,6 @@
 package ru.practicum.shareit.server.service.booking;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -92,6 +92,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BookingDto getBookingById(Long bookingId) {
         return BookingMapper.toBookingDto(
                 bookingRepository.findById(bookingId)
@@ -100,6 +101,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingShortDto> getAllBookingsByUser(Long userId, BookingState state, Long requesterId) {
         // Проверяем права доступа
         if (!Objects.equals(userId, requesterId)) {
@@ -123,6 +125,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingShortDto> getAllBookingsForOwnerItems(Long ownerId, BookingState state) {
         // Проверяем существование пользователя
         if (!userRepository.existsById(ownerId)) {
@@ -139,6 +142,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingDto> getAllBookings(BookingState state, Long requesterId) {
         // Проверяем права доступа
         if (!userRepository.existsById(requesterId)) {
